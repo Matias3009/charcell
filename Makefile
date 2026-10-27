@@ -6,7 +6,7 @@ OBJ=$(SBJ)main.o  $(SBJ)display.o
 FIN=$(BUI)charcell
 LIB=-lSDL2
 BUI=build/
-CC=g++ -Wall
+CC=g++ -Wall -std=c++23
 
 
 $(FIN) : $(OBJ) $(BUI)
@@ -24,8 +24,9 @@ $(BUI) :
 	mkdir $(BUI)
 
 
-run :
+run : $(FIN)
 	./$(FIN)
+
 clean :
 	rm -r $(SBJ)
 	rm $(FIN)
