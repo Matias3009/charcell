@@ -3,12 +3,13 @@
 SRC=src/
 SBJ=objects/
 OBJ=$(SBJ)main.o  $(SBJ)display.o
-FIN=charcell
+FIN=$(BUI)charcell
 LIB=-lSDL2
+BUI=build/
 CC=g++ -Wall
 
 
-$(FIN) : $(OBJ)
+$(FIN) : $(OBJ) $(BUI)
 	$(CC) $(OBJ) -o $(FIN) $(LIB)
 
 $(SBJ)main.o : $(SRC)main.cpp $(SBJ)
@@ -19,7 +20,13 @@ $(SBJ)display.o : $(SRC)display.cpp $(SRC)display.hpp $(SBJ)
 
 $(SBJ) :
 	mkdir $(SBJ)
+$(BUI) :
+	mkdir $(BUI)
 
+
+run :
+	./$(FIN)
 clean :
 	rm -r $(SBJ)
 	rm $(FIN)
+	rm -r $(BUI)
