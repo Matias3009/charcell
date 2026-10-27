@@ -1,0 +1,13 @@
+# by matsuori
+SRC=src/
+SBJ=objects/
+OBJ=$(SBJ)main.o
+FIN=charcell
+LIB=-lSDL2
+CC=g++
+
+$(FIN) : $(OBJ)
+	$(CC) $(OBJ) -o $(FIN) $(LIB)
+
+main.o : main.cpp
+	$(CC) -c main.cpp
