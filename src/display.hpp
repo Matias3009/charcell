@@ -5,6 +5,7 @@
 #include <vector>
 #include <atomic>
 #include <algorithm>
+#include <functional>
 
 #include "structs.hpp"
 
@@ -28,6 +29,23 @@ class display
 {
 public:
 
+  struct button
+  {
+    SDL_FRect rect;
+    bool active = true;
+    bool down = false;
+    std::function<void(bool)> call;
+    std::string text;
+
+    SDL_Color colors[5];
+    enum class State{normal=0,
+	       inactive=1,
+	       hover=2,
+	       pressed=3,
+	       active=4};
+    State state;
+  };
+
   display();
 
   bool initialize();
@@ -40,13 +58,21 @@ public:
 		std::uint16_t max,
 		std::uint16_t min);
 
+  std::vector<button> buttons;
+
 private:
 
+  bool is_m_collide(SDL_FRect* rect);
+  void draw_button(std::vector<button> btns);
+  void btn_collision();
+  void btn_event(SDL_Event e);
+  
   SDL_Window* window;
   SDL_Renderer* renderer;
 
   int w_width = 0;
   int w_height = 0;
+  float w_margin = 20.0f;
 
   SDL_FRect rect_plot;
   

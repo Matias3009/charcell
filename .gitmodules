@@ -1,0 +1,3 @@
+[submodule "src/CSerialPort"]
+	path = src/CSerialPort
+	url = https://github.com/itas109/CSerialPort.git
