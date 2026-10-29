@@ -1,4 +1,5 @@
 #include "display.hpp"
+#include "font_data.h"
 
 SDL_Color n2c(Uint32 colorInt) {
     SDL_Color c;
@@ -60,6 +61,10 @@ bool display::initialize()
     return false;
   }
 
+  if (TTF_Init() < 0){
+    std::cerr << "- No se pudo iniciar SDL_ttf!" << std::endl;
+  }
+
   std::cout << "- Iniciando SDL" << std::endl;
 
   window = SDL_CreateWindow(w_name.c_str(),
@@ -74,12 +79,12 @@ bool display::initialize()
     return false;
   }
 
-  init_sizes();
-  
   std::cout << "- Ventana creada!" << std::endl;
 
   renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
 
+  init_sizes();
+  
   if (renderer == nullptr){
     std::cerr <<
       "- No se pudo usar la superficie de la ventana!"
@@ -107,6 +112,7 @@ void display::main_loop()
 
       switch (e.type){
       case SDL_KEYDOWN:
+	key_down_e(e);
 	break;
       }
 
@@ -122,6 +128,7 @@ void display::main_loop()
 
     drawing();
     draw_button(buttons);
+    draw_texts();
     
     SDL_RenderPresent(renderer);
 
@@ -210,14 +217,61 @@ void display::init_sizes()
   rect_plot = {w_margin, w_margin, w_width*(2/3.0f), w_height*(2/3.0f)};
 
   buttons.at(0).rect = {w_width - w_margin - 200,
-		  w_height - w_margin - 100,
-		  200,
-		  100}; // START
+			w_height - w_margin - 100,
+			200,
+			100}; // START
   
   buttons.at(1).rect = {w_margin,
-		  w_height - w_margin - 40,
-		  100,
-		  40}; // connect
+			w_height - w_margin - 40,
+			100,
+			40}; // connect
+
+
+  rw = SDL_RWFromMem(fonts_LiberationSans_Bold_ttf,
+		     fonts_LiberationSans_Bold_ttf_len);
+
+  if (!rw){
+    std::cerr << "- Fallo al cargar memoria de fuentes!" << std::endl;
+  }
+  
+  font = TTF_OpenFontRW(rw, 1, 144);
+
+  if (font == NULL){
+    std::cerr << "- Fallo al cargar las fuentes!" << std::endl;
+    std::cerr << TTF_GetError() << std::endl;
+  }
+
+  for (auto& b : buttons){
+    SDL_Surface* surface = TTF_RenderText_Blended(font,
+						  b.text.c_str(),
+						  {20,
+						   20,
+						   20,
+						   SDL_ALPHA_OPAQUE});
+
+    if (surface == NULL){
+      std::cerr << "- Fallo al generar textura!" << std::endl;
+      std::cerr << SDL_GetError() << std::endl;
+    }
+
+    SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surface);
+    if (tex == NULL){
+      std::cerr << "- No se pudo crear la textura del texto: "
+		<< SDL_GetError() << std::endl;
+    }
+
+    b.texture_text = tex; 
+    
+    SDL_FreeSurface(surface);
+  }
+
+  texts.push_back({NULL, {w_margin,
+	w_height - w_margin - 85,
+	100,
+	20}});
+  set_texts(0, "port_c");
+  
+  
 }
 
 bool display::set_plot(std::vector<data_c>* list,
@@ -254,16 +308,21 @@ bool display::is_m_collide(SDL_FRect* rect)
 
 void display::draw_button(std::vector<button> btns)
 {
-  for (const auto& btn : btns){
+  for (auto& btn : btns){
     int btn_state = static_cast<int>(btn.state);
     
     SDL_SetRenderDrawColor(renderer,
-			     btn.colors[btn_state].r,
-			     btn.colors[btn_state].g,
-			     btn.colors[btn_state].b,
-			     btn.colors[btn_state].a);
-      SDL_RenderFillRectF(renderer,
-			  &btn.rect);
+			   btn.colors[btn_state].r,
+			   btn.colors[btn_state].g,
+			   btn.colors[btn_state].b,
+			   btn.colors[btn_state].a);
+    SDL_RenderFillRectF(renderer,
+			&btn.rect);
+
+    if (SDL_RenderCopyF(renderer, btn.texture_text, NULL,&btn.rect) < 0){
+      std::cerr << "- No se pudo dibujar la fuente: " << SDL_GetError()
+		<< std::endl;
+    }
   }
 }
 
@@ -308,4 +367,92 @@ void display::btn_event(SDL_Event e)
       }
     }
   }
+}
+
+void display::set_ports(std::vector<std::string> p, int n)
+{
+  ports_name = p;
+  port_now = n;
+  if (static_cast<std::size_t>(n) < ports_name.size()){
+    port_c = ports_name.at(n);
+    set_texts(0, port_c);
+  }
+}
+
+void display::next_port(int n)
+{
+  if (n > 0){
+    if (static_cast<std::size_t>(port_now + 1) < ports_name.size()){
+      port_now += 1;
+    }     
+  }
+  else if (n < 0){
+    if (port_now - 1 >= 0){
+      port_now -= 1;
+    }
+  }
+
+  port_c = ports_name.at(port_now);
+  set_texts(0, port_c);
+}
+
+void display::key_down_e(SDL_Event e){
+  if (e.type != SDL_KEYDOWN)
+    return;
+
+  switch (e.key.keysym.sym){
+  case SDLK_LEFT:
+    next_port(-1);
+    break;
+    
+  case SDLK_RIGHT:
+    next_port(1);
+    break;
+  }
+}
+
+void display::set_texts(int n, std::string s)
+{
+  SDL_Surface* surface = TTF_RenderText_Blended(font,
+					        s.c_str(),
+						{20,
+						 20,
+						 20,
+						 SDL_ALPHA_OPAQUE});
+
+  if (surface == NULL){
+    std::cerr << "- Fallo al generar textura!" << std::endl;
+    std::cerr << SDL_GetError() << std::endl;
+  }
+
+  SDL_Texture* tex = SDL_CreateTextureFromSurface(renderer, surface);
+  if (tex == NULL){
+    std::cerr << "- No se pudo crear la textura del texto: "
+	      << SDL_GetError() << std::endl;
+  }
+
+  texts.at(n).texture_text = tex; 
+}
+
+void display::draw_texts()
+{
+  for (auto& t : texts){
+
+    if (SDL_RenderCopyF(renderer, t.texture_text, NULL,&t.rect) < 0){
+      std::cerr << "- No se pudo dibujar la fuente (texto): "
+		<< SDL_GetError()
+		<< std::endl;
+    }
+  }
+}
+
+void display::start_plotting()
+{
+  buttons.at(0).active = true;
+  buttons.at(1).active = false;
+}
+
+void display::stop_plotting()
+{
+  
 }

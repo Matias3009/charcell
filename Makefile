@@ -9,7 +9,7 @@ $(SBJ)display.o \
 $(SBJ)connection.o
 
 FIN=$(BUI)charcell
-LIB=-lSDL2
+LIB=-lSDL2 -lSDL2_ttf
 BUI=build/
 CC=g++ -Wall -std=c++23
 
