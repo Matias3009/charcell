@@ -3,6 +3,19 @@
 
 Proyecto para visualizar y guardar la medición de una celda de carga.
 
+## Requirements
+Libraries:  
+- libsdl2 (SDL2)
+- sdl2-ttf (SDL2-TTF)
+
+Build tools:  
+- cmake
+- make (normally in build-essential or included in the distro/OS)
+- git
+
+To use serialports:  
+- (Linux) User in dialout group (normally required)
+
 ## How to build (Linux)
 
 Clone the repository:  
